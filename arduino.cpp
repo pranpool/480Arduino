@@ -2,7 +2,7 @@
 #include <MPU6050.h>
 
 MPU6050 mpu;
-const int buzzerPin = 9;
+const int buzzerPin = 6;
 const int movementThreshold = 20000;  // Adjust as needed
 
 void setup() {
