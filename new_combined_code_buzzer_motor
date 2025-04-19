@@ -1,0 +1,89 @@
+#include <Wire.h>
+#include <MPU6050.h>
+#include <Adafruit_NeoPixel.h>
+
+MPU6050 mpu;
+
+#define LED_PIN    5
+#define NUM_LEDS   8  // Adjust based on your strip
+Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
+
+const int buzzerPin = 6;
+const int movementThreshold = 20000;
+
+int end1 = 8;
+int end2 = 9;
+int button = 7;
+int state = 0;
+
+void setup() {
+  pinMode(end1, OUTPUT);
+  pinMode(end2, OUTPUT);
+  pinMode(button, INPUT_PULLUP);
+  pinMode(buzzerPin, OUTPUT);
+
+  Serial.begin(9600);
+  Serial.println("Initializing MPU6050...");
+
+  Wire.begin();
+  mpu.initialize();
+  if (!mpu.testConnection()) {
+    Serial.println("MPU6050 connection failed.");
+    while (1);
+  } else {
+    Serial.println("MPU6050 connected.");
+  }
+
+  strip.begin();
+  strip.show();  // Turn off all LEDs initially
+  Serial.println("Setup complete.");
+}
+
+void loop() {
+  int16_t ax, ay, az;
+  mpu.getAcceleration(&ax, &ay, &az);
+  long totalAccel = abs(ax) + abs(ay) + abs(az);
+
+  if (totalAccel > movementThreshold) {
+    Serial.println("Motion detected!");
+    analogWrite(buzzerPin, 50);
+    setAllLEDs(strip.Color(255, 0, 0));  // Red
+    delay(500);
+    analogWrite(buzzerPin, 0);
+    setAllLEDs(strip.Color(0, 0, 0));    // Off
+    delay(500);
+  }
+
+  if ((digitalRead(button) == LOW) && state == 0) {
+    Serial.println("Lifting up...");
+    digitalWrite(end2, LOW);
+    digitalWrite(end1, HIGH);
+    tone(buzzerPin, 1000);
+    setAllLEDs(strip.Color(0, 255, 0));  // Green
+    delay(1000);
+    digitalWrite(end1, LOW);
+    noTone(buzzerPin);
+    setAllLEDs(strip.Color(0, 0, 0));
+    state = 1;
+  } else if ((digitalRead(button) == LOW) && state == 1) {
+    Serial.println("Lowering down...");
+    digitalWrite(end1, LOW);
+    digitalWrite(end2, HIGH);
+    tone(buzzerPin, 800);
+    setAllLEDs(strip.Color(0, 0, 255));  // Blue
+    delay(1000);
+    digitalWrite(end2, LOW);
+    noTone(buzzerPin);
+    setAllLEDs(strip.Color(0, 0, 0));
+    state = 0;
+  }
+
+  delay(100);
+}
+
+void setAllLEDs(uint32_t color) {
+  for (int i = 0; i < NUM_LEDS; i++) {
+    strip.setPixelColor(i, color);
+  }
+  strip.show();
+}
