@@ -4,23 +4,25 @@
 MPU6050 mpu;
 const int buzzerPin = 6;
 const int movementThreshold = 20000;  // Adjust as needed
+int end1 = 8;
+int end2 = 9;
+int button = 7;
+int state = 0;
+
 
 void setup() {
+  // put your setup code here, to run once:
+  pinMode(end1,OUTPUT);
+  pinMode(end2,OUTPUT);
+  pinMode(button,INPUT_PULLUP);
+  pinMode(buzzerPin, OUTPUT);
+
   Serial.begin(9600);
-  Serial.println("Initializing I2C and MPU6050...");
+  Serial.println("Initializing");
 
   Wire.begin();
   mpu.initialize();
 
-  if (!mpu.testConnection()) {
-    Serial.println("Error: MPU6050 connection failed.");
-    while (1);  // Stop execution if MPU not found
-  } else {
-    Serial.println("MPU6050 connected successfully.");
-  }
-
-  pinMode(buzzerPin, OUTPUT);
-  Serial.println("Setup complete. Monitoring for movement...");
 }
 
 void loop() {
@@ -43,7 +45,17 @@ void loop() {
     analogWrite(buzzerPin, 0);
     delay(500);
   }
+  if((digitalRead(button)==LOW)&&state == 0){
+    digitalWrite(end1,HIGH);
+    digitalWrite(end2,LOW);
+    delay(1000);
+    state = 1;
+  }else if((digitalRead(button)==LOW)&&state == 1){
+    digitalWrite(end1,LOW);
+    digitalWrite(end2,HIGH);
+    delay(1000);
+    state = 0;
+  }
 
   delay(200);  // Regular polling delay
 }
-
